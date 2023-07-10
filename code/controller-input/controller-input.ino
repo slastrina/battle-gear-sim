@@ -1,5 +1,8 @@
 #include <Joystick.h>
 
+int firstButton = 6;
+int buttonCount = 8;
+
 Joystick_ Joystick(
   JOYSTICK_DEFAULT_REPORT_ID, // hid report type
   JOYSTICK_TYPE_MULTI_AXIS, // joystick type
@@ -48,7 +51,7 @@ void setup()
 
 // Constant that maps the phyical pin to the joystick button.
 // Start Pin Index
-const int pinToButtonMap = 6;
+const int pinToButtonMap = firstButton;
 
 // Last state of the button - we are
 int lastButtonState[8] = {0,0,0,0,0,0,0,0};
@@ -67,7 +70,7 @@ void loop(){
   Joystick.setThrottle(Throttle_);                
 
     // Read pin values
-  for (int index = 0; index < 4; index++)
+  for (int index = 0; index < buttonCount; index++)
   {
     int currentButtonState = !digitalRead(index + pinToButtonMap);
     if (currentButtonState != lastButtonState[index])
