@@ -5,7 +5,7 @@ int buttonCount = 8;
 
 Joystick_ Joystick(
   JOYSTICK_DEFAULT_REPORT_ID, // hid report type
-  JOYSTICK_TYPE_MULTI_AXIS, // joystick type
+  JOYSTICK_TYPE_JOYSTICK, // joystick type
   8, // button count
   0, // hatswitch count
   false, // includeXAxis
@@ -20,13 +20,18 @@ Joystick_ Joystick(
   true,  // includeBrake
   false); // includeSteering
 
-int zAxis_ = 0;
-int RxAxis_ = 0;
-int RyAxis_ = 0;
-int RzAxis_ = 0;
+int Clutch_ = 0;
+int Brake_ = 0;
 int Throttle_ = 0;
 
 const bool initAutoSendState = true; 
+
+const int DEADZONE = 20; // Size of the deadzone around the center
+
+// Flags to check if previous value was outside the deadzone
+bool wasOutsideDeadzone_Clutch = false;
+bool wasOutsideDeadzone_Brake = false;
+bool wasOutsideDeadzone_Throttle = false;
 
 void setup()
 {
@@ -57,19 +62,40 @@ const int pinToButtonMap = firstButton;
 int lastButtonState[8] = {0,0,0,0,0,0,0,0};
 
 void loop(){
-  zAxis_ = analogRead(A0);  
-  zAxis_ = map(zAxis_,0,1023,0,255);
-  Joystick.setZAxis(zAxis_);
-  
-  RzAxis_ = analogRead(A1);
-  RzAxis_ = map(RzAxis_,1023,0,255,0);            
-  Joystick.setBrake(RzAxis_);
-    
-  Throttle_ = analogRead(A2);
-  Throttle_ = map(Throttle_,1023,0,255,0);         
-  Joystick.setThrottle(Throttle_);                
+  Clutch_ = analogRead(A0);
+  Clutch_ = map(Clutch_, 15, 560, 0, 1023);
 
-    // Read pin values
+  if (Clutch_ > DEADZONE) {
+    Joystick.setZAxis(Clutch_);
+    wasOutsideDeadzone_Clutch = true;
+  } else if (wasOutsideDeadzone_Clutch) {
+    Joystick.setZAxis(0);
+    wasOutsideDeadzone_Clutch = false;
+  }
+
+  Brake_ = analogRead(A1);
+  Brake_ = map(Brake_, 340, 650, 0, 1023);
+
+  if (Brake_ > DEADZONE) {
+    Joystick.setBrake(Brake_);
+    wasOutsideDeadzone_Brake = true;
+  } else if (wasOutsideDeadzone_Brake) {
+    Joystick.setBrake(0);
+    wasOutsideDeadzone_Brake = false;
+  }
+
+  Throttle_ = analogRead(A2);
+  Throttle_ = map(Throttle_, 40, 480, 0, 1023);
+
+  if (Throttle_ > DEADZONE) {
+    Joystick.setThrottle(Throttle_);
+    wasOutsideDeadzone_Throttle = true;
+  } else if (wasOutsideDeadzone_Throttle) {
+    Joystick.setThrottle(0);
+    wasOutsideDeadzone_Throttle = false;
+  }
+  
+  // Read pin values
   for (int index = 0; index < buttonCount; index++)
   {
     int currentButtonState = !digitalRead(index + pinToButtonMap);
